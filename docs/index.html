@@ -350,17 +350,12 @@
       </div>
       
       <div class="form-group">
-        <label for="expected-model">Expected Model Name (optional)</label>
-        <select id="expected-model">
-          <option value="">— Auto detect —</option>
-          <option value="claude-sonnet">Claude Sonnet</option>
-          <option value="claude-opus">Claude Opus</option>
-          <option value="gpt-4">GPT-4</option>
-          <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
-          <option value="qwen-2.5">Qwen 2.5</option>
-          <option value="llama-3">Llama 3</option>
-          <option value="custom">Custom</option>
-        </select>
+        <label for="expected-model">Expected Model Names (optional)</label>
+        <input type="text" id="expected-model" placeholder="e.g., claude-3, gpt-4, qwen-2.5 (comma-separated)" 
+               value="" autocomplete="off" />
+        <div style="margin-top: 0.3rem; font-size: 0.78rem; color: var(--muted);">
+          Enter model names separated by commas. Supports: claude-sonnet, claude-opus, gpt-4, gpt-3.5-turbo, qwen-2.5, llama-3, or any custom slug
+        </div>
       </div>
       
       <button class="btn btn-success" id="scan-btn">🚀 Start Model Detection</button>
@@ -485,7 +480,7 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 const providerNameInput = document.getElementById("provider-name");
 const providerEndpointInput = document.getElementById("provider-endpoint");
 const authTokenInput = document.getElementById("auth-token");
-const expectedModelSelect = document.getElementById("expected-model");
+const expectedModelInput = document.getElementById("expected-model");
 const scanBtn = document.getElementById("scan-btn");
 const resultsPanel = document.getElementById("results");
 const scanStatus = document.getElementById("scan-status");
@@ -502,27 +497,27 @@ function loadProvider(type) {
     providerNameInput.value = 'Anthropic Claude';
     providerEndpointInput.value = 'https://api.anthropic.com/v1/messages';
     authTokenInput.placeholder = 'sk-ant-api3-xxxxx';
-    expectedModelSelect.value = 'claude-sonnet';
+    expectedModelInput.value = 'claude-sonnet';
   } else if (type === 'openai') {
     providerNameInput.value = 'OpenAI GPT';
     providerEndpointInput.value = 'https://api.openai.com/v1/chat/completions';
     authTokenInput.placeholder = 'sk-xxx';
-    expectedModelSelect.value = 'gpt-4';
+    expectedModelInput.value = 'gpt-4';
   } else if (type === 'azure') {
     providerNameInput.value = 'Azure OpenAI Service';
     providerEndpointInput.value = 'https://your-resource.azure.microsoft.com/openai/deployments/your-deployment/chat/completions?api-version=2024-02-01';
     authTokenInput.placeholder = 'Azure API Key';
-    expectedModelSelect.value = 'gpt-4';
+    expectedModelInput.value = 'gpt-4';
   } else if (type === 'cohere') {
     providerNameInput.value = 'Cohere API';
     providerEndpointInput.value = 'https://api.cohere.ai/v1/chat';
     authTokenInput.placeholder = 'Cohere API Key';
-    expectedModelSelect.value = 'custom';
+    expectedModelInput.value = '';
   } else if (type === 'custom') {
     providerNameInput.value = 'Custom Provider';
     providerEndpointInput.value = '';
     authTokenInput.placeholder = 'Bearer token';
-    expectedModelSelect.value = '';
+    expectedModelInput.value = '';
   }
 }
 
@@ -547,9 +542,17 @@ async function runScan() {
     providerConfig.headers["Authorization"] = token.startsWith("Bearer") ? token : `Bearer ${token}`;
   }
 
-  // Add expected model flag for comparison
-  if (expectedModelSelect.value) {
-    providerConfig.expectedModel = expectedModelSelect.value;
+  // Parse expected models from comma-separated input (supports multiple)
+  const expectedModelsText = expectedModelInput.value.trim();
+  if (expectedModelsText) {
+    // Split by comma, trim spaces, filter empty values
+    const expectedModels = expectedModelsText.split(',').map(m => m.trim()).filter(m => m);
+    
+    // Store all expected models for comparison
+    providerConfig.expectedModels = expectedModels;
+    
+    // Also store first one for quick reference
+    providerConfig.expectedModel = expectedModels[0];
   }
 
   // Reset UI
@@ -581,12 +584,26 @@ function checkIssues(result) {
   const issues = [];
   const topCandidate = result.hypotheses[0];
 
-  // Check if detected model differs from expected
-  if (currentResult.providerConfig?.expectedModel) {
+  // Check against all expected models (supports multiple)
+  if (currentResult.providerConfig?.expectedModels) {
+    const detected = topCandidate.name.toLowerCase();
+    
+    currentResult.providerConfig.expectedModels.forEach(expected => {
+      const expectedLower = expected.toLowerCase();
+      
+      // Simple heuristic: if expected != detected and confidence < 80%
+      if (expectedLower !== detected && topCandidate.confidence < 80) {
+        issues.push({
+          type: 'warning',
+          message: `Potential model mismatch for "${expected}": claimed ${expected}, but detected patterns suggest "${detected}" (${topCandidate.confidence}% confidence)`
+        });
+      }
+    });
+  } else if (currentResult.providerConfig?.expectedModel) {
+    // Fallback to single expected model comparison
     const expected = currentResult.providerConfig.expectedModel;
     const detected = topCandidate.name.toLowerCase();
     
-    // Simple heuristic: if expected != detected and confidence < 80%
     if (expected !== detected && topCandidate.confidence < 80) {
       issues.push({
         type: 'warning',
