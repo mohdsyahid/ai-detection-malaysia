@@ -12,6 +12,7 @@
     --accent: #58a6ff;
     --success: #3fb950;
     --warning: #d29922;
+    --danger: #da3633;
     --text: #c9d1d9;
     --muted: #8b949e;
     --border: #30363d;
@@ -35,7 +36,35 @@
     color: var(--accent);
   }
   header p { color: var(--muted); max-width: 700px; margin: 0 auto; }
-  main { max-width: 900px; margin: 0 auto; padding: 0 1.2rem 3rem; }
+  main { max-width: 1000px; margin: 0 auto; padding: 0 1.2rem 3rem; }
+  
+  /* Tab Navigation */
+  .tabs {
+    display: flex;
+    gap: .5rem;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 0;
+  }
+  .tab-btn {
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    padding: .7rem 1rem;
+    cursor: pointer;
+    font-weight: 600;
+    border-bottom: 2px solid transparent;
+    transition: all .2s;
+  }
+  .tab-btn:hover { color: var(--accent); }
+  .tab-btn.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+  
+  /* Content Panels */
+  .panel { display: none; }
+  .panel.active { display: block; }
   
   /* Form Styles */
   .config-panel {
@@ -79,6 +108,8 @@
   }
   .btn:hover { opacity: .9; }
   .btn:disabled { opacity: .5; cursor: not-allowed; }
+  .btn-success { background: var(--success); }
+  .btn-warning { background: var(--warning); color: #161b22; }
   
   /* Results Panel */
   .results-panel {
@@ -94,6 +125,52 @@
     margin-bottom: 1rem;
   }
   
+  /* Alert Boxes */
+  .alert {
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    border-left: 3px solid;
+  }
+  .alert-info {
+    background: rgba(56,139,253,.15);
+    border-left-color: var(--accent);
+  }
+  .alert-warning {
+    background: rgba(210,153,34,.15);
+    border-left-color: var(--warning);
+  }
+  .alert-danger {
+    background: rgba(218,55,51,.15);
+    border-left-color: var(--danger);
+  }
+  .alert-title {
+    font-weight: 700;
+    margin-bottom: .4rem;
+  }
+  
+  /* Provider Presets */
+  .provider-presets {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: .6rem;
+    margin-bottom: 1rem;
+  }
+  .preset-btn {
+    background: #0d1117;
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: .5rem .8rem;
+    border-radius: 6px;
+    font-size: .85rem;
+    cursor: pointer;
+    transition: all .2s;
+  }
+  .preset-btn:hover {
+    border-color: var(--accent);
+    background: rgba(88,166,255,.1);
+  }
+  
   /* Model Card */
   .model-card {
     background: #0d1117;
@@ -107,6 +184,7 @@
     align-items: center;
     gap: .8rem;
     margin-bottom: .7rem;
+    flex-wrap: wrap;
   }
   .model-badge {
     background: var(--success);
@@ -116,6 +194,8 @@
     font-size: .75rem;
     font-weight: 700;
   }
+  .model-badge.warning { background: var(--warning); }
+  .model-badge.danger { background: var(--danger); }
   .model-name {
     font-size: 1.1rem;
     font-weight: 700;
@@ -124,11 +204,12 @@
   .model-score {
     flex: 1;
     display: flex;
+    align-items: center;
     justify-content: flex-end;
   }
   .score-bar {
     position: relative;
-    height: 32px;
+    height: 28px;
     min-width: 150px;
     background: #21262d;
     border-radius: 6px;
@@ -182,7 +263,7 @@
     gap: .4rem;
   }
   .test-icon { font-size: 1rem; }
-  .test-details { color: var(--muted); font-size: .8rem; }
+  .test-details { color: var(--muted); font-size: .8rem; word-break: break-word; }
   
   /* Spinner Animation */
   .spinner {
@@ -195,6 +276,18 @@
     animation: spin 1s linear infinite;
   }
   @keyframes spin { to { transform: rotate(360deg); } }
+  
+  /* CLI Instructions */
+  .cli-code {
+    background: #0d1117;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem;
+    font-family: monospace;
+    font-size: .85rem;
+    margin: .5rem 0;
+    overflow-x: auto;
+  }
   
   /* Footer */
   footer {
@@ -209,75 +302,238 @@
 <body>
 <header>
   <h1>🔍 AI Authentication Checker</h1>
-  <p>Check sama ada provider AI jual model yang sebenar atau sekadar rebrand open-source models. Masukkan API endpoint dan kami akan analyze behavioural patterns untuk identify underlying model.</p>
+  <p>Verify AI model identity through behavioral profiling. Detect masking, downgrade, alias palsu, and provider routing issues.</p>
 </header>
 
 <main>
-  <div class="config-panel">
-    <div class="form-group">
-      <label for="provider-name">Provider Name</label>
-      <input type="text" id="provider-name" placeholder="Contoh: MyBank AI API" value="Custom Provider" />
-    </div>
-    
-    <div class="form-group">
-      <label for="provider-endpoint">API Endpoint URL</label>
-      <input type="url" id="provider-endpoint" placeholder="https://api.example.com/v1/generate" value="https://your-provider.example.com/api/generate" />
-    </div>
-    
-    <div class="form-group">
-      <label for="auth-header">Auth Header Token (optional)</label>
-      <input type="text" id="auth-header" placeholder="Bearer sk-xxxxx" value="YOUR_TOKEN" />
-    </div>
-    
-    <button class="btn" id="scan-btn">🚀 Start Model Detection</button>
+  <!-- Tab Navigation -->
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="web-checker">Web Dashboard</button>
+    <button class="tab-btn" data-tab="python-cli">Python CLI Tool</button>
+    <button class="tab-btn" data-tab="instructions">How To Use</button>
   </div>
 
-  <div class="results-panel" id="results" hidden>
-    <div class="scan-status" id="scan-status">
-      <span class="spinner"></span> Scanning provider...
+  <!-- Web Dashboard Panel -->
+  <div id="web-checker" class="panel active">
+    <div class="alert alert-info">
+      <div class="alert-title">⚡ Live Testing Mode</div>
+      Masukkan API details di bawah dan kami akan test secara langsung. Semua testing dilakukan di browser kamu — tiada data dihantar ke server pihak ketiga.
     </div>
-    
-    <div id="hypotheses-container"></div>
-    
-    <div class="tests-grid" id="tests-grid"></div>
+
+    <div class="config-panel">
+      <!-- Provider Presets -->
+      <div class="form-group">
+        <label>Quick Setup — Common Providers</label>
+        <div class="provider-presets">
+          <button class="preset-btn" onclick="loadProvider('anthropic')">Anthropic (Claude)</button>
+          <button class="preset-btn" onclick="loadProvider('openai')">OpenAI (GPT)</button>
+          <button class="preset-btn" onclick="loadProvider('azure')">Azure OpenAI</button>
+          <button class="preset-btn" onclick="loadProvider('cohere')">Cohere</button>
+          <button class="preset-btn" onclick="loadProvider('custom')">Custom Endpoint</button>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="provider-name">Provider Name</label>
+        <input type="text" id="provider-name" placeholder="Contoh: MyBank AI API" value="Custom Provider" />
+      </div>
+      
+      <div class="form-group">
+        <label for="provider-endpoint">API Endpoint URL</label>
+        <input type="url" id="provider-endpoint" placeholder="https://api.openai.com/v1/chat/completions" 
+               value="" autocomplete="off" />
+      </div>
+      
+      <div class="form-group">
+        <label for="auth-token">Auth Token / API Key</label>
+        <input type="password" id="auth-token" placeholder="sk-xxxxx atau Bearer token" autocomplete="off" />
+      </div>
+      
+      <div class="form-group">
+        <label for="expected-model">Expected Model Name (optional)</label>
+        <select id="expected-model">
+          <option value="">— Auto detect —</option>
+          <option value="claude-sonnet">Claude Sonnet</option>
+          <option value="claude-opus">Claude Opus</option>
+          <option value="gpt-4">GPT-4</option>
+          <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+          <option value="qwen-2.5">Qwen 2.5</option>
+          <option value="llama-3">Llama 3</option>
+          <option value="custom">Custom</option>
+        </select>
+      </div>
+      
+      <button class="btn btn-success" id="scan-btn">🚀 Start Model Detection</button>
+    </div>
+
+    <div class="results-panel" id="results" hidden>
+      <div class="scan-status" id="scan-status">
+        <span class="spinner"></span> Running diagnostic tests...
+      </div>
+      
+      <div id="issues-container" hidden>
+        <h3 style="font-size: 1rem; color: var(--warning); margin-top: 0;">🔴 Detection Issues Found</h3>
+        <div id="issues-list"></div>
+      </div>
+      
+      <div id="hypotheses-container"></div>
+      
+      <div class="tests-grid" id="tests-grid"></div>
+    </div>
+
+    <div class="results-panel" id="info-panel" style="margin-top: 1.5rem;">
+      <h2 style="font-size: 1rem; color: var(--accent); margin-top: 0;">Detection Capabilities</h2>
+      <ul style="color: var(--muted); font-size: .88rem; line-height: 1.6; padding-left: 1.2rem;">
+        <li><strong>Model Masking:</strong> Detect jika vendor rebrand open-source models sebagai premium</li>
+        <li><strong>Model Downgrade:</strong> Check if they're serving cheaper model than advertised</li>
+        <li><strong>False Aliases:</strong> Identify fake model names that don't match actual capabilities</li>
+        <li><strong>Provider Routing:</strong> Trace through cloud provider layers (Azure → OpenAI → proprietary)</li>
+      </ul>
+    </div>
   </div>
 
-  <div class="results-panel" id="info-panel" style="margin-top: 1.5rem;">
-    <h2 style="font-size: 1rem; color: var(--accent); margin-top: 0;">Cara Ia Berfungsi</h2>
-    <ul style="color: var(--muted); font-size: .88rem; line-height: 1.6; padding-left: 1.2rem;">
-      <li><strong>Knowledge Cutoff Test:</strong> Check jika model mentions knowledge cutoff dates (common dengan GPT/Claude)</li>
-      <li><strong>Creativity Test:</strong> Generate creative content dan analyze response patterns</li>
-      <li><strong>Code Generation Test:</strong> Evaluate code understanding dan step-by-step explanation style</li>
-      <li><strong>Verbosity Test:</strong> Measure response length bias (claude elaborates, mistral concise)</li>
-    </ul>
+  <!-- Python CLI Panel -->
+  <div id="python-cli" class="panel">
+    <div class="alert alert-info">
+      <div class="alert-title">🐍 Python CLI Detector</div>
+      Download and run the Python tool for batch testing and more detailed analysis. This version supports proxy configuration, request logging, and exportable reports.
+    </div>
+
+    <div class="config-panel">
+      <h3 style="font-size: 1.1rem; color: var(--accent); margin-top: 0;">Installation & Usage</h3>
+      
+      <div class="cli-code">
+# Install requirements<br/>
+pip install requests python-dotenv<br/><br/>
+<br/>
+# Create .env file with your API keys<br/>
+echo "ANTHROPIC_API_KEY=sk-..." > .env<br/>
+echo "OPENAI_API_KEY=sk-..." >> .env<br/><br/>
+<br/>
+# Run batch detection on multiple endpoints<br/>
+python ai-detector-cli.py \
+  --endpoint https://api.example.com/v1/generate \
+  --token $MY_TOKEN \
+  --expected-model claude-3-sonnet \
+  --output report.json
+      </div>
+
+      <h3 style="font-size: 1rem; color: var(--accent); margin-top: 1.5rem;">Download Script</h3>
+      <pre class="cli-code">curl -O https://raw.githubusercontent.com/mohdsyahid/ai-detection-malaysia/main/cli/ai-detector-cli.py
+chmod +x cli/ai-detector-cli.py
+python cli/ai-detector-cli.py --help</pre>
+
+      <div class="alert alert-warning" style="margin-top: 1rem;">
+        <div class="alert-title">⚠️ Privacy Notice</div>
+        The Python CLI runs locally — all API calls go directly from your machine to provider endpoints. No data is logged or transmitted to third-party servers.
+      </div>
+    </div>
+  </div>
+
+  <!-- Instructions Panel -->
+  <div id="instructions" class="panel">
+    <div class="config-panel">
+      <h2 style="font-size: 1.1rem; color: var(--accent); margin-top: 0;">How It Works</h2>
+      
+      <h3 style="font-size: 1rem; color: var(--text); margin-top: 1.5rem;">1. Behavioral Profiling Tests</h3>
+      <ul style="color: var(--muted); font-size: .88rem; line-height: 1.6; padding-left: 1.2rem;">
+        <li><strong>Knowledge Cutoff Detection:</strong> Does it mention training data limits? (Claude/GPT often do)</li>
+        <li><strong>Creativity Analysis:</strong> Response patterns to poetic/creative requests</li>
+        <li><strong>Code Generation Test:</strong> Step-by-step explanations vs direct answers</li>
+        <li><strong>Verbosity Assessment:</strong> Long elaborate responses (Claude) vs concise (Mistral)</li>
+      </ul>
+
+      <h3 style="font-size: 1rem; color: var(--text); margin-top: 1.5rem;">2. Pattern Matching</h3>
+      <p style="color: var(--muted); font-size: .88rem; line-height: 1.6;">Each response is analyzed against known model signatures:</p>
+      <ul style="color: var(--muted); font-size: .88rem; line-height: 1.6; padding-left: 1.2rem;">
+        <li>Claude: hedging language, nuanced approach, detailed explanations</li>
+        <li>GPT-4: comprehensive structure, bullet points, confidence markers</li>
+        <li>Qwen: clean markdown, direct answers, efficient formatting</li>
+        <li>Llama/Mistral: neutral tone, brief responses, casual personality</li>
+      </ul>
+
+      <h3 style="font-size: 1rem; color: var(--text); margin-top: 1.5rem;">3. Confidence Scoring</h3>
+      <p style="color: var(--muted); font-size: .88rem; line-height: 1.6;">We calculate statistical confidence based on pattern matches and return ranked hypotheses. Scores above 60% = high confidence match.</p>
+
+      <div class="alert alert-danger" style="margin-top: 1.5rem;">
+        <div class="alert-title">🔍 Disclaimer</div>
+        This tool uses probabilistic inference — results are hypotheses, not definitive proof. For production compliance, request official model cards from providers.
+      </div>
+    </div>
   </div>
 </main>
 
 <footer>
   Dibuat oleh <a href="https://github.com/mohdsyahid" target="_blank">@mohdsyahid</a> · 
   Source: <a href="https://github.com/mohdsyahid/ai-detection-malaysia" target="_blank">GitHub</a> · 
-  Disclaimer: Tool ni untuk educational/research purposes sahaja
+  Disclaimer: Educational/research purposes only
 </footer>
 
 <script src="ai-detector.js"></script>
 <script>
+// Tab Navigation
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(btn.dataset.tab).classList.add('active');
+  });
+});
+
+// Form Elements
 const providerNameInput = document.getElementById("provider-name");
 const providerEndpointInput = document.getElementById("provider-endpoint");
-const authHeaderInput = document.getElementById("auth-header");
+const authTokenInput = document.getElementById("auth-token");
+const expectedModelSelect = document.getElementById("expected-model");
 const scanBtn = document.getElementById("scan-btn");
 const resultsPanel = document.getElementById("results");
 const scanStatus = document.getElementById("scan-status");
 const hypothesesContainer = document.getElementById("hypotheses-container");
+const issuesContainer = document.getElementById("issues-container");
+const issuesList = document.getElementById("issues-list");
 const testsGrid = document.getElementById("tests-grid");
 
 let currentResult = null;
+
+// Quick Load Providers
+function loadProvider(type) {
+  if (type === 'anthropic') {
+    providerNameInput.value = 'Anthropic Claude';
+    providerEndpointInput.value = 'https://api.anthropic.com/v1/messages';
+    authTokenInput.placeholder = 'sk-ant-api3-xxxxx';
+    expectedModelSelect.value = 'claude-sonnet';
+  } else if (type === 'openai') {
+    providerNameInput.value = 'OpenAI GPT';
+    providerEndpointInput.value = 'https://api.openai.com/v1/chat/completions';
+    authTokenInput.placeholder = 'sk-xxx';
+    expectedModelSelect.value = 'gpt-4';
+  } else if (type === 'azure') {
+    providerNameInput.value = 'Azure OpenAI Service';
+    providerEndpointInput.value = 'https://your-resource.azure.microsoft.com/openai/deployments/your-deployment/chat/completions?api-version=2024-02-01';
+    authTokenInput.placeholder = 'Azure API Key';
+    expectedModelSelect.value = 'gpt-4';
+  } else if (type === 'cohere') {
+    providerNameInput.value = 'Cohere API';
+    providerEndpointInput.value = 'https://api.cohere.ai/v1/chat';
+    authTokenInput.placeholder = 'Cohere API Key';
+    expectedModelSelect.value = 'custom';
+  } else if (type === 'custom') {
+    providerNameInput.value = 'Custom Provider';
+    providerEndpointInput.value = '';
+    authTokenInput.placeholder = 'Bearer token';
+    expectedModelSelect.value = '';
+  }
+}
 
 async function runScan() {
   const providerConfig = {
     name: providerNameInput.value.trim() || "Custom Provider",
     endpoint: providerEndpointInput.value.trim(),
     method: "POST",
-    headers: {},
+    headers: {
+      "Content-Type": "application/json"
+    },
     bodyTemplate: JSON.stringify({
       prompt: "${PROMPT}",
       temperature: 0.7,
@@ -285,14 +541,23 @@ async function runScan() {
     }),
   };
 
-  if (authHeaderInput.value.trim()) {
-    providerConfig.headers["Authorization"] = authHeaderInput.value.trim();
+  // Add auth header
+  if (authTokenInput.value.trim()) {
+    const token = authTokenInput.value.trim();
+    providerConfig.headers["Authorization"] = token.startsWith("Bearer") ? token : `Bearer ${token}`;
+  }
+
+  // Add expected model flag for comparison
+  if (expectedModelSelect.value) {
+    providerConfig.expectedModel = expectedModelSelect.value;
   }
 
   // Reset UI
   resultsPanel.hidden = false;
   hypothesesContainer.innerHTML = "";
   testsGrid.innerHTML = "";
+  issuesContainer.hidden = true;
+  issuesList.innerHTML = "";
   scanStatus.innerHTML = '<span class="spinner"></span> Running diagnostic tests...';
   scanBtn.disabled = true;
 
@@ -302,6 +567,9 @@ async function runScan() {
 
     renderResults(result);
     scanStatus.textContent = `✅ Scan completed! ${result.requestCount} requests made.`;
+    
+    // Check for potential issues
+    checkIssues(result);
   } catch (error) {
     scanStatus.textContent = `❌ Scan failed: ${error.message}`;
   }
@@ -309,7 +577,47 @@ async function runScan() {
   scanBtn.disabled = false;
 }
 
+function checkIssues(result) {
+  const issues = [];
+  const topCandidate = result.hypotheses[0];
+
+  // Check if detected model differs from expected
+  if (currentResult.providerConfig?.expectedModel) {
+    const expected = currentResult.providerConfig.expectedModel;
+    const detected = topCandidate.name.toLowerCase();
+    
+    // Simple heuristic: if expected != detected and confidence < 80%
+    if (expected !== detected && topCandidate.confidence < 80) {
+      issues.push({
+        type: 'warning',
+        message: `Potential model mismatch: claimed "${expected}" but detected patterns suggest "${detected}" (${topCandidate.confidence}% confidence)`
+      });
+    }
+  }
+
+  // Check for low overall confidence
+  if (topCandidate.confidence < 40) {
+    issues.push({
+      type: 'warning',
+      message: 'Low confidence detection — model may be heavily customized or unknown variant'
+    });
+  }
+
+  // Show issues if any
+  if (issues.length > 0) {
+    issuesContainer.hidden = false;
+    issuesList.innerHTML = issues.map(issue => `
+      <div class="alert alert-${issue.type}" style="margin-bottom: .5rem;">
+        <div class="alert-title">${issue.type === 'warning' ? '⚠️' : '🔴'} ${issue.message}</div>
+      </div>
+    `).join('');
+  }
+}
+
 function renderResults(result) {
+  // Render issues first
+  renderIssues(result);
+
   // Render hypotheses
   result.hypotheses.forEach((hypothesis, index) => {
     setTimeout(() => {
@@ -340,19 +648,24 @@ function createHypothesisCard(hypothesis) {
   card.className = "model-card";
 
   const isTopCandidate = hypothesis === currentResult.hypotheses[0];
-  const badgeText = isTopCandidate ? "Best Match" : (hypothesis.confidence > 50 ? "High Confidence" : "Possible");
-  const badgeClass = isTopCandidate ? "model-badge" : (hypothesis.confidence > 50 ? "model-badge" : "");
+  let badgeHtml = '';
+  
+  if (isTopCandidate) {
+    badgeHtml = '<span class="model-badge">🎯 Top Match</span>';
+  } else if (hypothesis.confidence > 50) {
+    badgeHtml = `<span class="model-badge" style="background: var(--accent); color: #0d1117;">${hypothesis.confidence}%</span>`;
+  }
 
   card.innerHTML = `
     <div class="model-header">
       <div class="model-name">${hypothesis.name}</div>
+      ${badgeHtml}
       <div class="model-score">
         <div class="score-bar">
           <div class="score-fill"></div>
           <div class="score-value">${hypothesis.confidence}%</div>
         </div>
       </div>
-      ${isTopCandidate ? '<span class="model-badge">🎯 Top Match</span>' : ''}
     </div>
     <ul class="model-evidence">
       ${hypothesis.evidence.map((e) => `<li>${e}</li>`).join("")}
@@ -369,13 +682,17 @@ function createTestCard(test) {
   const icon = test.passed ? "✓" : "✗";
   const statusColor = test.passed ? "var(--success)" : "var(--warning)";
 
+  // Sanitize JSON output for display
+  let detailsText = typeof test === 'object' 
+    ? JSON.stringify(test, null, 2).substring(0, 200)
+    : String(test);
+  if (detailsText.length > 200) detailsText += "...";
+
   card.innerHTML = `
     <div class="test-name" style="color: ${statusColor};">
       <span class="test-icon">${icon}</span> ${test.testName}
     </div>
-    <div class="test-details">
-      ${JSON.stringify(test, null, 2).substring(0, 150)}${JSON.stringify(test, null, 2).length > 150 ? "..." : ""}
-    </div>
+    <div class="test-details">${detailsText.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
   `;
 
   return card;
@@ -385,3 +702,4 @@ scanBtn.addEventListener("click", runScan);
 </script>
 </body>
 </html>
+
