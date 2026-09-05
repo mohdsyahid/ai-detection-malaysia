@@ -616,7 +616,7 @@ function checkIssues(result) {
 
 function renderResults(result) {
   // Render issues first
-  renderIssues(result);
+  checkIssues(result);
 
   // Render hypotheses
   result.hypotheses.forEach((hypothesis, index) => {
