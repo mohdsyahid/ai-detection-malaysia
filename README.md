@@ -8,44 +8,60 @@ Banyak bank, fintech, dan corporate providers di Malaysia jual akses API dengan 
 
 ## ✨ Ciri-ciri Utama
 
+- **Live Web Dashboard** — Test provider langsung dari browser with API key support
 - **Multi-Provider Scanning**: Test endpoint dari mana-mana AI provider
 - **Behavioral Profiling**: 4 diagnostic tests analyze response patterns
 - **Model Signature Matching**: Compare against known model artifacts
 - **Confidence Scoring**: Ranked hypotheses dengan statistical confidence
+- **Python CLI Tool** — Batch testing with automated reports (--endpoint / --token / --config / --output)
+- **Issue Detection** — Auto-flag masking, downgrade, false aliases
 - **UMD Module Pattern**: Boleh pakai dalam Node.js atau browser tanpa dependencies
 - **Zero External Dependencies**: Pure JavaScript + native fetch API
 
-## 🚀 Quick Start
+## 🚀 Live Demo & Download
 
-### Web Interface
+### Direct Link to Live Dashboard
 
-1. Open `docs/index.html` in browser (atau deploy ke GitHub Pages)
-2. Masukkan API endpoint details
-3. Click **"Start Model Detection"**
-4. View ranked model hypotheses
+**🌐 Test Now:** [mohdsyahid.github.io/ai-detection-malaysia](https://mohdsyahid.github.io/ai-detection-malaysia/)
 
-**Live Demo:** https://mohdsyahid.github.io/ai-detection-malaysia/
+Features on live page:
+- ✅ Quick provider presets (OpenAI/Anthropic/Azure/Cohere)
+- ✅ Input your own endpoint + API token
+- ✅ Expected model comparison alerts
+- ✅ Tabbed UI (Web Checker / Python CLI / Instructions)
+- ✅ Real-time animated results with score bars
 
-### Node.js Usage
+### Python CLI Installation
 
-```javascript
-const { scanProvider } = require('./docs/ai-detector.js');
+```bash
+# Clone or download from releases
+git clone https://github.com/mohdsyahid/ai-detection-malaysia.git
+cd ai-detection-malaysia
 
-const providerConfig = {
-  name: "MyBank AI API",
-  endpoint: "https://api.mybank.com/v1/generate",
-  method: "POST",
-  headers: {
-    "Authorization": "Bearer sk-xxxxx"
-  },
-  bodyTemplate: JSON.stringify({
-    prompt: "${PROMPT}",
-    max_tokens: 200
-  })
-};
+# Or download standalone script
+curl -O https://raw.githubusercontent.com/mohdsyahid/ai-detection-malaysia/main/cli/ai-detector-cli.py
+python -m pip install requests python-dotenv
+```
 
-const result = await scanProvider(providerConfig);
-console.log("Top Hypothesis:", result.hypotheses[0]);
+## 📦 Repository Structure
+
+```
+ai-detection-malaysia/
+├── cli/                    # Python CLI tools directory
+│   ├── ai-detector-cli.py  # Main CLI executable
+│   └── README.md           # CLI documentation
+├── src/                    # Source files (development)
+│   └── ai-detector.js     # Core UMD module with detection logic
+├── docs/                   # Production-ready files for deployment
+│   ├── ai-detector.js     # Built UMD module (same as src)
+│   └── index.html         # Web dashboard UI
+├── tests/                  # Unit tests using node:test
+│   └── ai-detector.test.js
+├── .github/workflows/      # CI/CD pipelines
+│   └── ci.yml            # Automated testing on push
+├── package.json
+├── LICENSE                # MIT License
+└── README.md              # This file
 ```
 
 ## 🔬 Cara Ia Berfungsi
@@ -84,41 +100,40 @@ mistral: {
 }
 ```
 
-## 📦 Repository Structure
+### Detection Capabilities
 
-```
-ai-detection-malaysia/
-├── src/                    # Source files (development)
-│   └── ai-detector.js     # Core UMD module with detection logic
-├── docs/                   # Production-ready files for deployment
-│   ├── ai-detector.js     # Built UMD module (same as src)
-│   └── index.html         # Web dashboard UI
-├── tests/                  # Unit tests using node:test
-│   └── ai-detector.test.js
-├── .github/workflows/      # CI/CD pipelines
-│   └── ci.yml            # Automated testing on push
-├── package.json
-├── LICENSE                # MIT License
-└── README.md              # This file
-```
+The tool can identify:
+
+1. **Model Masking** — Vendor claims proprietary model but serves open-source under different name
+2. **Model Downgrade** — Cheaper model served instead of advertised premium one
+3. **False Aliases** — Fake model names that don't match capabilities
+4. **Provider Routing** — Trace through cloud provider layers (Azure → OpenAI → proprietary)
+5. **Response Pattern Analysis** — Confidence scoring based on behavioral fingerprints
 
 ## 🧪 Running Tests
 
 ```bash
-# Run all test suites
+# Run all test suites (Node.js tests)
 npm test
 
 # Individual test file
 node --test tests/ai-detector.test.js
+
+# Run Python CLI locally
+python cli/ai-detector-cli.py \
+  --endpoint https://api.openai.com/v1/chat/completions \
+  --token sk-xxx \
+  --expected-model gpt-4
 ```
 
-All tests pass ✅ - includes behavioral pattern verification and edge case handling.
+All tests pass ✅ — includes behavioral pattern verification and edge case handling.
 
 ## 🔐 Privacy & Security Notes
 
 - **No data logging**: All scanning happens client-side, no requests to our servers
 - **Rate limiting respected**: Default timeout 15s per request to avoid spamming endpoints
 - **Your API keys stay yours**: Auth tokens never leave your browser/local environment
+- **Local execution only**: Python CLI runs completely offline except for target provider calls
 
 ## ⚠️ Disclaimer
 
@@ -134,6 +149,11 @@ For production compliance/auditing, request **model cards** or **technical docum
 
 Works in all modern browsers (Chrome, Firefox, Safari, Edge) thanks to UMD pattern. No build step required — just include `<script src="ai-detector.js"></script>` and use `window.AIDetector`.
 
+Python CLI requires:
+- Python 3.8+
+- `requests` library
+- `python-dotenv` (optional)
+
 ## 📄 License
 
 MIT License — feel free to use, modify, distribute for personal/commercial projects.
@@ -146,4 +166,4 @@ Created by [@mohdsyahid](https://github.com/mohdsyahid) as part of Malaysian com
 
 **Built with ❤️ for the Malaysian tech community**
 
-*Last Updated: 2026-09-05 | Version: 1.0.0*
+*Last Updated: 2026-09-05 | Version: 1.1.0*
