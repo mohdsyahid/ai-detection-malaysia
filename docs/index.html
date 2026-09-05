@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AI Authentication Checker — Verify Model Identity</title>
+<meta name="description" content="Check sama ada provider AI jual model yang sebenar atau wrapper of model lain. Scan endpoint dan identify underlying model melalui behavioral profiling." />
+<style>
+  :root {
+    --bg: #0f1419;
+    --panel: #161b22;
+    --accent: #58a6ff;
+    --success: #3fb950;
+    --warning: #d29922;
+    --text: #c9d1d9;
+    --muted: #8b949e;
+    --border: #30363d;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+  }
+  header {
+    padding: 2.5rem 1.5rem;
+    text-align: center;
+    background: linear-gradient(180deg, rgba(88,166,255,.08) 0%, transparent 100%);
+  }
+  header h1 {
+    font-size: clamp(1.5rem, 3.5vw, 2.1rem);
+    margin: 0 0 .5rem;
+    color: var(--accent);
+  }
+  header p { color: var(--muted); max-width: 700px; margin: 0 auto; }
+  main { max-width: 900px; margin: 0 auto; padding: 0 1.2rem 3rem; }
+  
+  /* Form Styles */
+  .config-panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.4rem;
+    margin-bottom: 1.5rem;
+  }
+  .form-group { margin-bottom: 1rem; }
+  .form-group label {
+    display: block;
+    font-size: .9rem;
+    font-weight: 600;
+    margin-bottom: .4rem;
+    color: var(--text);
+  }
+  .form-group input, .form-group select {
+    width: 100%;
+    padding: .7rem .9rem;
+    background: #0d1117;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: .95rem;
+  }
+  .form-group input:focus, .form-group select:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+  .btn {
+    background: var(--accent);
+    color: #0d1117;
+    border: none;
+    padding: .75rem 1.4rem;
+    border-radius: 8px;
+    font-weight: 700;
+    cursor: pointer;
+    font-size: .95rem;
+    transition: opacity .2s;
+  }
+  .btn:hover { opacity: .9; }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+  
+  /* Results Panel */
+  .results-panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-top: 1.5rem;
+  }
+  .scan-status {
+    font-size: .88rem;
+    color: var(--muted);
+    margin-bottom: 1rem;
+  }
+  
+  /* Model Card */
+  .model-card {
+    background: #0d1117;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.2rem;
+    margin-bottom: 1rem;
+  }
+  .model-header {
+    display: flex;
+    align-items: center;
+    gap: .8rem;
+    margin-bottom: .7rem;
+  }
+  .model-badge {
+    background: var(--success);
+    color: #0d1117;
+    padding: .25rem .6rem;
+    border-radius: 999px;
+    font-size: .75rem;
+    font-weight: 700;
+  }
+  .model-name {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--accent);
+  }
+  .model-score {
+    flex: 1;
+    display: flex;
+    justify-content: flex-end;
+  }
+  .score-bar {
+    position: relative;
+    height: 32px;
+    min-width: 150px;
+    background: #21262d;
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .score-fill {
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--success));
+    transition: width .6s ease-out;
+    width: 0%;
+  }
+  .score-value {
+    position: absolute;
+    right: .6rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-weight: 700;
+    font-size: .85rem;
+  }
+  .model-evidence {
+    margin-left: 2.8rem;
+    color: var(--muted);
+    font-size: .85rem;
+  }
+  .model-evidence li { margin: .2rem 0; }
+  
+  /* Tests Grid */
+  .tests-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: .8rem;
+    margin-top: 1.5rem;
+  }
+  .test-card {
+    background: #161b22;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: .9rem;
+    font-size: .85rem;
+  }
+  .test-card.passed { border-color: var(--success); }
+  .test-card.failed { border-color: var(--warning); }
+  .test-name {
+    font-weight: 700;
+    margin-bottom: .4rem;
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+  }
+  .test-icon { font-size: 1rem; }
+  .test-details { color: var(--muted); font-size: .8rem; }
+  
+  /* Spinner Animation */
+  .spinner {
+    display: inline-block;
+    width: 18px;
+    height: 18px;
+    border: 2px solid var(--accent);
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  
+  /* Footer */
+  footer {
+    text-align: center;
+    color: var(--muted);
+    font-size: .82rem;
+    padding: 1.5rem 1rem 2rem;
+  }
+  footer a { color: var(--accent); }
+</style>
+</head>
+<body>
+<header>
+  <h1>🔍 AI Authentication Checker</h1>
+  <p>Check sama ada provider AI jual model yang sebenar atau sekadar rebrand open-source models. Masukkan API endpoint dan kami akan analyze behavioural patterns untuk identify underlying model.</p>
+</header>
+
+<main>
+  <div class="config-panel">
+    <div class="form-group">
+      <label for="provider-name">Provider Name</label>
+      <input type="text" id="provider-name" placeholder="Contoh: MyBank AI API" value="Custom Provider" />
+    </div>
+    
+    <div class="form-group">
+      <label for="provider-endpoint">API Endpoint URL</label>
+      <input type="url" id="provider-endpoint" placeholder="https://api.example.com/v1/generate" value="https://your-provider.example.com/api/generate" />
+    </div>
+    
+    <div class="form-group">
+      <label for="auth-header">Auth Header Token (optional)</label>
+      <input type="text" id="auth-header" placeholder="Bearer sk-xxxxx" value="YOUR_TOKEN" />
+    </div>
+    
+    <button class="btn" id="scan-btn">🚀 Start Model Detection</button>
+  </div>
+
+  <div class="results-panel" id="results" hidden>
+    <div class="scan-status" id="scan-status">
+      <span class="spinner"></span> Scanning provider...
+    </div>
+    
+    <div id="hypotheses-container"></div>
+    
+    <div class="tests-grid" id="tests-grid"></div>
+  </div>
+
+  <div class="results-panel" id="info-panel" style="margin-top: 1.5rem;">
+    <h2 style="font-size: 1rem; color: var(--accent); margin-top: 0;">Cara Ia Berfungsi</h2>
+    <ul style="color: var(--muted); font-size: .88rem; line-height: 1.6; padding-left: 1.2rem;">
+      <li><strong>Knowledge Cutoff Test:</strong> Check jika model mentions knowledge cutoff dates (common dengan GPT/Claude)</li>
+      <li><strong>Creativity Test:</strong> Generate creative content dan analyze response patterns</li>
+      <li><strong>Code Generation Test:</strong> Evaluate code understanding dan step-by-step explanation style</li>
+      <li><strong>Verbosity Test:</strong> Measure response length bias (claude elaborates, mistral concise)</li>
+    </ul>
+  </div>
+</main>
+
+<footer>
+  Dibuat oleh <a href="https://github.com/mohdsyahid" target="_blank">@mohdsyahid</a> · 
+  Source: <a href="https://github.com/mohdsyahid/ai-detection-malaysia" target="_blank">GitHub</a> · 
+  Disclaimer: Tool ni untuk educational/research purposes sahaja
+</footer>
+
+<script src="ai-detector.js"></script>
+<script>
+const providerNameInput = document.getElementById("provider-name");
+const providerEndpointInput = document.getElementById("provider-endpoint");
+const authHeaderInput = document.getElementById("auth-header");
+const scanBtn = document.getElementById("scan-btn");
+const resultsPanel = document.getElementById("results");
+const scanStatus = document.getElementById("scan-status");
+const hypothesesContainer = document.getElementById("hypotheses-container");
+const testsGrid = document.getElementById("tests-grid");
+
+let currentResult = null;
+
+async function runScan() {
+  const providerConfig = {
+    name: providerNameInput.value.trim() || "Custom Provider",
+    endpoint: providerEndpointInput.value.trim(),
+    method: "POST",
+    headers: {},
+    bodyTemplate: JSON.stringify({
+      prompt: "${PROMPT}",
+      temperature: 0.7,
+      max_tokens: 200,
+    }),
+  };
+
+  if (authHeaderInput.value.trim()) {
+    providerConfig.headers["Authorization"] = authHeaderInput.value.trim();
+  }
+
+  // Reset UI
+  resultsPanel.hidden = false;
+  hypothesesContainer.innerHTML = "";
+  testsGrid.innerHTML = "";
+  scanStatus.innerHTML = '<span class="spinner"></span> Running diagnostic tests...';
+  scanBtn.disabled = true;
+
+  try {
+    const result = await AIDetector.scanProvider(providerConfig);
+    currentResult = result;
+
+    renderResults(result);
+    scanStatus.textContent = `✅ Scan completed! ${result.requestCount} requests made.`;
+  } catch (error) {
+    scanStatus.textContent = `❌ Scan failed: ${error.message}`;
+  }
+
+  scanBtn.disabled = false;
+}
+
+function renderResults(result) {
+  // Render hypotheses
+  result.hypotheses.forEach((hypothesis, index) => {
+    setTimeout(() => {
+      const card = createHypothesisCard(hypothesis);
+      hypothesesContainer.appendChild(card);
+      
+      // Animate score bar
+      setTimeout(() => {
+        const scoreFill = card.querySelector(".score-fill");
+        if (scoreFill) {
+          scoreFill.style.width = hypothesis.confidence + "%";
+        }
+      }, 100 * index);
+    }, 200 * index);
+  });
+
+  // Render tests grid
+  result.rawResults.forEach((test, index) => {
+    setTimeout(() => {
+      const testCard = createTestCard(test);
+      testsGrid.appendChild(testCard);
+    }, 300 + 100 * index);
+  });
+}
+
+function createHypothesisCard(hypothesis) {
+  const card = document.createElement("div");
+  card.className = "model-card";
+
+  const isTopCandidate = hypothesis === currentResult.hypotheses[0];
+  const badgeText = isTopCandidate ? "Best Match" : (hypothesis.confidence > 50 ? "High Confidence" : "Possible");
+  const badgeClass = isTopCandidate ? "model-badge" : (hypothesis.confidence > 50 ? "model-badge" : "");
+
+  card.innerHTML = `
+    <div class="model-header">
+      <div class="model-name">${hypothesis.name}</div>
+      <div class="model-score">
+        <div class="score-bar">
+          <div class="score-fill"></div>
+          <div class="score-value">${hypothesis.confidence}%</div>
+        </div>
+      </div>
+      ${isTopCandidate ? '<span class="model-badge">🎯 Top Match</span>' : ''}
+    </div>
+    <ul class="model-evidence">
+      ${hypothesis.evidence.map((e) => `<li>${e}</li>`).join("")}
+    </ul>
+  `;
+
+  return card;
+}
+
+function createTestCard(test) {
+  const card = document.createElement("div");
+  card.className = `test-card ${test.passed ? "passed" : "failed"}`;
+
+  const icon = test.passed ? "✓" : "✗";
+  const statusColor = test.passed ? "var(--success)" : "var(--warning)";
+
+  card.innerHTML = `
+    <div class="test-name" style="color: ${statusColor};">
+      <span class="test-icon">${icon}</span> ${test.testName}
+    </div>
+    <div class="test-details">
+      ${JSON.stringify(test, null, 2).substring(0, 150)}${JSON.stringify(test, null, 2).length > 150 ? "..." : ""}
+    </div>
+  `;
+
+  return card;
+}
+
+scanBtn.addEventListener("click", runScan);
+</script>
+</body>
+</html>

@@ -1,0 +1,26 @@
+{
+  "name": "ai-detection-malaysia",
+  "version": "1.0.0",
+  "description": "AI Model Authentication & Verification - Detect underlying model through behavioral profiling and signature analysis",
+  "main": "docs/ai-detector.js",
+  "scripts": {
+    "test": "node --test tests/*.test.js"
+  },
+  "keywords": [
+    "ai",
+    "model",
+    "authentication",
+    "verification",
+    "detection",
+    "malaysia",
+    "behavioral-analysis",
+    "profiling"
+  ],
+  "author": "Mohd Syahid <mohdsyahid@github.com>",
+  "license": "MIT",
+  "homepage": "https://github.com/mohdsyahid/ai-detection-malaysia",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mohdsyahid/ai-detection-malaysia.git"
+  }
+}
